@@ -1,6 +1,3 @@
-arquivo README.md.
-
-Markdown
 
 # CNPJ Data Pipeline
 
