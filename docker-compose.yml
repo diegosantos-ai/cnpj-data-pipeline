@@ -1,0 +1,23 @@
+﻿services:
+  postgres:
+    image: postgres:16
+    container_name: cnpj_postgres
+    environment:
+      POSTGRES_USER: cnpj
+      POSTGRES_PASSWORD: cnpj123
+      POSTGRES_DB: cnpjdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_cnpj:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer:4
+    container_name: cnpj_adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata_cnpj:
