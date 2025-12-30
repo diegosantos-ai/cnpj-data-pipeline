@@ -1,6 +1,7 @@
 import zipfile
 import logging
 import csv
+import os
 from pathlib import Path
 from tqdm import tqdm
 
@@ -15,82 +16,136 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def write_head_sample(in_csv, out_csv, n_rows):
-    """Lê as primeiras N linhas de um CSV e escreve em outro arquivo (streaming)."""
-    # RFB usa latin1 e delimitador ;
-    with open(in_csv, "r", encoding="latin1", errors="replace", newline="") as fin, \
-         open(out_csv, "w", encoding="utf-8", newline="") as fout:
-        
-        # Como os arquivos da RFB NÃO têm header, não usamos next(reader)
-        # O script de carga via COPY vai assumir a ordem correta das colunas
-        reader = csv.reader(fin, delimiter=";")
-        writer = csv.writer(fout, delimiter=";")
+# Conjunto global para armazenar chaves de empresas (CNPJ Básico)
+# Usado apenas no modo sample para garantir integridade referencial
+EMPRESA_KEYS = set()
 
-        count = 0
-        for row in reader:
-            writer.writerow(row)
-            count += 1
-            if count >= n_rows:
-                break
-    return count
+def extract_and_sample(zip_path: Path, output_dir: Path, is_empresa: bool = False):
+    """
+    Extrai arquivo do zip e gera amostra.
+    Se is_empresa=True, popula o set EMPRESA_KEYS.
+    Se is_empresa=False, filtra usando EMPRESA_KEYS.
+    """
+    global EMPRESA_KEYS
+    
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as zf:
+            for member in zf.infolist():
+                final_path = output_dir / member.filename
+                
+                # Check de idempotência (se não forçado)
+                if final_path.exists() and not pipeline_settings.sample_force:
+                    logger.info(f"⏩ Amostra de {member.filename} já existe. Pulando.")
+                    
+                    # Se for empresa e o arquivo já existe, precisamos carregar as chaves dele
+                    # para poder filtrar os próximos (estabelecimentos/socios)
+                    if is_empresa and pipeline_settings.mode == "sample":
+                        logger.info(f"♻️  Carregando chaves de empresa existentes de {final_path.name}...")
+                        with open(final_path, "r", encoding="utf-8") as f:
+                            reader = csv.reader(f, delimiter=";")
+                            for row in reader:
+                                if row: EMPRESA_KEYS.add(row[0])
+                        logger.info(f"📊 Chaves carregadas: {len(EMPRESA_KEYS)}")
+                    continue
+
+                logger.info(f"📂 Extraindo e gerando amostra inteligente de {member.filename}...")
+                
+                # Extrai para stream (usando open do zipfile)
+                # Não extrai para disco para economizar I/O e espaço
+                with zf.open(member) as zfile:
+                    # Wrapper para ler como texto (latin1 é o padrão da RFB)
+                    import io
+                    text_stream = io.TextIOWrapper(zfile, encoding="latin1", errors="replace")
+                    
+                    with open(final_path, "w", encoding="utf-8", newline="") as fout:
+                        reader = csv.reader(text_stream, delimiter=";")
+                        writer = csv.writer(fout, delimiter=";")
+                        
+                        count = 0
+                        skipped = 0
+                        
+                        for row in reader:
+                            if not row: continue
+                            
+                            cnpj_basico = row[0]
+                            
+                            if is_empresa:
+                                # Modo Empresa: Adiciona ao set e escreve
+                                EMPRESA_KEYS.add(cnpj_basico)
+                                writer.writerow(row)
+                                count += 1
+                            else:
+                                # Modo Satélite (Estab/Socio): Filtra pelo set
+                                if cnpj_basico in EMPRESA_KEYS:
+                                    writer.writerow(row)
+                                    count += 1
+                                else:
+                                    skipped += 1
+                            
+                            # Limite de linhas (apenas se escreveu)
+                            if count >= pipeline_settings.sample_rows:
+                                break
+                        
+                        logger.info(f"✅ {final_path.name}: {count} linhas escritas. (Skipped: {skipped})")
+
+    except zipfile.BadZipFile:
+        logger.error(f"❌ Arquivo corrompido: {zip_path.name}")
+    except Exception as e:
+        logger.error(f"❌ Erro ao processar {zip_path.name}: {e}")
 
 def main():
     bootstrap()
     
-    zip_files = list(RAW_DIR.glob("*.zip"))
+    if pipeline_settings.mode == "sample":
+        logger.info(f"🧪 MODO SAMPLE (Inteligente) ATIVADO")
+        logger.info(f"🎯 Alvo: {pipeline_settings.sample_rows} linhas filtradas por integridade.")
+        target_dir = SAMPLE_DIR
+    else:
+        logger.info("🚀 MODO FULL ATIVADO")
+        target_dir = PROCESSED_DIR
     
-    if not zip_files:
-        logger.warning("⚠️ Nenhum arquivo .zip encontrado em data/raw")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    
+    all_zips = list(RAW_DIR.glob("*.zip"))
+    if not all_zips:
+        logger.warning("⚠️ Nenhum arquivo .zip encontrado.")
         return
 
-    logger.info(f"📦 Encontrados {len(zip_files)} arquivos para extração.")
+    # Separa por tipos para garantir ordem de processamento
+    # 1. Empresas (Gera as chaves)
+    # 2. Estabelecimentos (Consome chaves)
+    # 3. Socios (Consome chaves)
     
-    # Define diretório de destino
-    target_base = SAMPLE_DIR if pipeline_settings.mode == "sample" else PROCESSED_DIR
-    target_base.mkdir(parents=True, exist_ok=True)
+    zips_emp = sorted([f for f in all_zips if "Empresas" in f.name])
+    zips_estab = sorted([f for f in all_zips if "Estabelecimentos" in f.name])
+    zips_socio = sorted([f for f in all_zips if "Socios" in f.name])
+    
+    # Se estiver em modo sample, filtra a quantidade de arquivos aqui também
+    # (Embora o download já tenha filtrado, é bom garantir)
+    if pipeline_settings.mode == "sample":
+        k = pipeline_settings.sample_files_per_type
+        zips_emp = zips_emp[:k]
+        zips_estab = zips_estab[:k]
+        zips_socio = zips_socio[:k]
 
-    for zip_path in zip_files:
-        logger.info(f"🔧 Processando: {zip_path.name}")
-        
-        try:
-            with zipfile.ZipFile(zip_path, 'r') as zf:
-                for member in zf.infolist():
-                    # No modo SAMPLE, extraímos para TMP e depois fazemos o head
-                    if pipeline_settings.mode == "sample":
-                        tmp_path = PROCESSED_DIR / member.filename # Usa processed como staging
-                        final_path = SAMPLE_DIR / member.filename
-                        
-                        if final_path.exists() and not pipeline_settings.sample_force:
-                            logger.info(f"⏩ Amostra de {member.filename} já existe. Pulando.")
-                            continue
+    # 1. Processar Empresas
+    logger.info("--- ETAPA 1: EMPRESAS (Gerando Chaves) ---")
+    for z in zips_emp:
+        extract_and_sample(z, target_dir, is_empresa=True)
+    
+    logger.info(f"🔑 Total de Chaves de Empresas Carregadas: {len(EMPRESA_KEYS)}")
 
-                        logger.info(f"📂 Extraindo e gerando amostra de {member.filename}...")
-                        # Extrai arquivo completo temporariamente
-                        zf.extract(member, path=PROCESSED_DIR)
-                        
-                        # Gera o head (amostra)
-                        rows = write_head_sample(tmp_path, final_path, pipeline_settings.sample_rows)
-                        logger.info(f"🧪 Amostra gerada: {rows} linhas em {final_path.name}")
-                        
-                        # Remove o arquivo gigante original para economizar espaço
-                        tmp_path.unlink()
-                    else:
-                        # Modo FULL
-                        target_path = PROCESSED_DIR / member.filename
-                        if target_path.exists():
-                            if target_path.stat().st_size == member.file_size:
-                                logger.info(f"⏩ {member.filename} já extraído. Pulando.")
-                                continue
+    # 2. Processar Estabelecimentos
+    logger.info("--- ETAPA 2: ESTABELECIMENTOS (Filtrando) ---")
+    for z in zips_estab:
+        extract_and_sample(z, target_dir, is_empresa=False)
 
-                        logger.info(f"📂 Extraindo {member.filename}...")
-                        zf.extract(member, path=PROCESSED_DIR)
-                    
-        except zipfile.BadZipFile:
-            logger.error(f"❌ Arquivo corrompido: {zip_path.name}")
-        except Exception as e:
-            logger.error(f"❌ Erro ao extrair {zip_path.name}: {e}")
+    # 3. Processar Socios
+    logger.info("--- ETAPA 3: SOCIOS (Filtrando) ---")
+    for z in zips_socio:
+        extract_and_sample(z, target_dir, is_empresa=False)
 
-    logger.info(f"✅ Processo de extração ({pipeline_settings.mode}) finalizado.")
+    logger.info("✅ Processo finalizado com sucesso.")
 
 if __name__ == "__main__":
     main()

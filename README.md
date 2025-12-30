@@ -1,11 +1,10 @@
-
 # CNPJ Data Pipeline
 
 ## 📋 Visão geral do projeto
 
 Este projeto tem como objetivo construir um **pipeline de engenharia de dados** utilizando os **Dados Abertos de CNPJ da Receita Federal**, cobrindo desde a preparação do ambiente até a ingestão, modelagem e disponibilização dos dados para análise.
 
-O projeto foi estruturado por **fases**, cada uma documentada e versionada, para servir tanto como **material de aprendizado prático** quanto como **evidência de experiência aplicada em engenharia de dados**.
+O projeto é estruturado por **fases**, cada uma documentada e versionada, para servir tanto como **material de aprendizado prático** quanto como **evidência de experiência aplicada em engenharia de dados**.
 
 ---
 
@@ -23,8 +22,8 @@ O projeto foi estruturado por **fases**, cada uma documentada e versionada, para
 - **Linguagem:** Python 3.13
 - **Banco de Dados:** PostgreSQL 16
 - **Infraestrutura:** Docker + Docker Compose
-- **Bibliotecas:** SQLAlchemy, Pandas, python-dotenv
-- **Ferramentas:** Adminer (interface de banco), Git e GitHub
+- **Bibliotecas:** SQLAlchemy, Pandas, python-dotenv, tqdm, requests
+- **Ferramentas:** Adminer, Git e GitHub
 
 ---
 
@@ -38,190 +37,82 @@ cnpj-data-pipeline/
 ├── .gitignore
 │
 ├── src/
-│   ├── __init__.py          # Define src como pacote Python
-│   ├── config.py            # Configuração central do banco de dados
-│   └── 00_test_connection.py # Teste de conexão com o banco
+│   ├── __init__.py
+│   ├── config.py            # Configuração central (DB e Pipeline)
+│   ├── paths.py             # Centralização de caminhos (DATA_ROOT)
+│   ├── bootstrap.py         # Validação de ambiente e diretórios
+│   ├── run_pipeline.py      # Orquestrador do pipeline
+│   ├── 00_test_connection.py # Teste de conexão
+│   ├── 01_download.py        # Ingestão (Download)
+│   ├── 02_init_db.py         # Inicialização do schema
+│   ├── 03_extract_files.py   # Extração e Amostragem
+│   └── 04_load_data.py       # Carga no banco de dados
 │
-├── data/
-│   ├── raw/                 # Dados brutos (não versionados)
-│   └── processed/           # Dados processados
-│
-├── sql/                     # Scripts SQL
-├── docs/                    # Documentação e evidências
-└── logs/                    # Logs de execução
-Fase 0 — Setup do ambiente
-Objetivo da fase
-Preparar um ambiente local totalmente reprodutível, garantindo que:
+├── sql/
+│   └── create_tables.sql    # DDL das tabelas
+├── logs/                    # Logs de execução
+└── docs/                    # Documentação e evidências
+```
 
-O banco de dados esteja isolado via container.
+---
 
-O acesso ao banco seja simples e visual.
+## 🏗️ Fase 0 — Setup do ambiente (✅ Concluída)
 
-O ambiente Python esteja controlado.
+**Objetivo:** Preparar um ambiente local totalmente reprodutível, isolado via container e com ambiente Python controlado.
 
-A estrutura base do projeto esteja organizada.
+**Destaques:**
+- PostgreSQL via Docker Compose.
+- Variáveis de ambiente centralizadas no `.env`.
+- Scripts de teste de conexão validados.
 
-Nota: Nenhum dado é processado nesta fase. Ela estabelece a fundação sólida para todo o pipeline.
+---
 
-🐳 Infraestrutura com Docker
-docker-compose.yml
-YAML
+## 📥 Fase 1 — Ingestão de Dados (✅ Concluída)
 
-services:
-  postgres:
-    image: postgres:16
-    container_name: cnpj_postgres
-    environment:
-      POSTGRES_USER: cnpj
-      POSTGRES_PASSWORD: cnpj123
-      POSTGRES_DB: cnpjdb
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata_cnpj:/var/lib/postgresql/data
+### 1. Status da Fase
+- **Status:** Concluída
+- **Validação:** QA aprovado (Sanity Checks 100% match em modo sample)
+- **HD Externo:** Configurado e validado para grandes volumes.
 
-  adminer:
-    image: adminer:4
-    container_name: cnpj_adminer
-    ports:
-      - "8080:8080"
-    depends_on:
-      - postgres
+### 2. Critério de Encerramento
+A Fase 1 foi encerrada após o atendimento dos seguintes critérios:
+- Pipeline de ingestão executável ponta a ponta.
+- Paths externos (`DATA_ROOT`) configurados e isolados.
+- Estrutura de `bootstrap` validada (Fail-fast para HD desconectado).
+- Runner funcional (`run_pipeline.py`) com suporte a flags.
+- **Suporte a modo `sample` inteligente** (preservando integridade referencial entre Empresas, Estabelecimentos e Sócios).
 
-volumes:
-  pgdata_cnpj:
-O que este arquivo faz:
+### 3. Decisões Técnicas Documentadas
 
-Sobe um banco PostgreSQL em container.
+#### 3.1 Padrão DATA_ROOT
+Adotado para centralizar a localização de dados brutos e processados fora do repositório Git, facilitando a portabilidade e mantendo o repositório leve.
 
-Cria um volume persistente para os dados (pgdata_cnpj).
+#### 3.2 Uso de HD Externo
+Decisão consciente de arquitetura para lidar com o volume massivo da base completa (Big Data), garantindo escalabilidade sem comprometer o armazenamento interno (SSD).
 
-Disponibiliza o Adminer via navegador (porta 8080).
+#### 3.3 Modo Sample Inteligente
+Implementação de amostragem ancorada em **Empresas**. O pipeline extrai uma amostra de empresas e filtra automaticamente os estabelecimentos e sócios correspondentes, garantindo que o banco de dados de teste seja consistente (Join Rate de 100%).
 
-Evita instalação manual de banco no sistema operacional.
+#### 3.4 Orquestrador (Runner)
+Criação do `src.run_pipeline` para centralizar a execução, suportando as flags:
+- `--mode [full|sample]`: Alterna entre carga completa e amostra.
+- `--sample-rows N`: Define o tamanho da amostra.
+- `--force`: Força a regeração de amostras.
+- `--dry-run`: Simula as etapas sem execução real.
 
-⚙️ Configurações e Ambiente
-Variáveis de ambiente
-Arquivo .env (na raiz do projeto, não versionado):
+### 4. Evidências de Execução
 
-Ini, TOML
+**Execução em modo Sample:**
+```powershell
+python -m src.run_pipeline --mode sample --sample-rows 50000 --force
+```
+- **Resultado:** ~500k registros carregados (50k por arquivo) com integridade referencial total.
+- **Sanity Check:** Match rate Estabelecimentos -> Empresas: **100.0%**.
 
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=cnpjdb
-DB_USER=cnpj
-DB_PASSWORD=cnpj123
-Essas variáveis são carregadas pelos scripts Python para configurar a conexão com o banco.
+---
 
-Ambiente Python
-Criação do ambiente virtual:
-
-Bash
-
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-Instalação das dependências:
-
-Bash
-
-pip install pandas sqlalchemy psycopg2-binary requests tqdm python-dotenv
-🐍 Implementação em Python
-Configuração central do banco (src/config.py)
-Python
-
-from dataclasses import dataclass
-import os
-from dotenv import load_dotenv
-
-# Carrega variáveis do arquivo .env
-load_dotenv()
-
-@dataclass(frozen=True)
-class DBConfig:
-    # Parâmetros de conexão com o banco
-    host: str = os.getenv("DB_HOST", "localhost")
-    port: int = int(os.getenv("DB_PORT", "5432"))
-    name: str = os.getenv("DB_NAME", "cnpjdb")
-    user: str = os.getenv("DB_USER", "cnpj")
-    password: str = os.getenv("DB_PASSWORD", "cnpj123")
-
-    @property
-    def sqlalchemy_url(self) -> str:
-        # String de conexão usada pelo SQLAlchemy
-        return (
-            f"postgresql+psycopg2://"
-            f"{self.user}:{self.password}"
-            f"@{self.host}:{self.port}/{self.name}"
-        )
-Por que isso é importante:
-
-Centraliza a configuração de acesso.
-
-Evita credenciais hardcoded no código.
-
-Facilita reutilização em outros scripts.
-
-Teste de conexão (src/00_test_connection.py)
-Python
-
-from sqlalchemy import create_engine, text
-from src.config import DBConfig
-
-def main():
-    # Cria objeto de configuração
-    cfg = DBConfig()
-
-    # Cria engine de conexão com o banco
-    engine = create_engine(cfg.sqlalchemy_url)
-
-    # Abre conexão e executa query simples
-    with engine.connect() as conn:
-        result = conn.execute(
-            text("SELECT 1 AS ok")
-        ).mappings().one()
-
-        # Confirma que o banco respondeu corretamente
-        print(f"DB connection OK: {result['ok']}")
-
-if __name__ == "__main__":
-    main()
-Execução do teste:
-
-Bash
-
-python -m src.00_test_connection
-Resultado esperado:
-
-Plaintext
-
-DB connection OK: 1
-✅ Checklist da Fase 0
-[x] Docker Compose configurado
-
-[x] PostgreSQL rodando em container
-
-[x] Adminer acessível via navegador
-
-[x] Ambiente Python isolado com venv
-
-[x] Estrutura base do projeto criada
-
-[x] Conexão com banco validada via código
-
-🚀 O que esta fase demonstra
-Capacidade de preparar ambiente reprodutível.
-
-Uso prático de Docker e PostgreSQL.
-
-Organização profissional de projeto Python.
-
-Boas práticas iniciais de engenharia de dados.
-
-🔜 Próxima fase: Fase 1 — Ingestão de dados
-Análise da estrutura dos dados da Receita Federal.
-
-Download automatizado dos arquivos.
-
-Extração dos dados brutos para processamento.
-
-
+## 🔜 Próxima fase: Fase 2 — Transformação e Normalização
+- Limpeza de dados.
+- Tipagem correta de colunas (Datas, Números).
+- Criação de Primary Keys e Índices para performance.
+- Normalização de tabelas auxiliares (CNAEs, Municípios, etc.).
