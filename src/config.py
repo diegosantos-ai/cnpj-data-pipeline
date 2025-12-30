@@ -1,4 +1,4 @@
-﻿from dataclasses import dataclass
+from dataclasses import dataclass
 import os
 from dotenv import load_dotenv
 
@@ -14,8 +14,15 @@ class DBConfig:
 
     @property
     def sqlalchemy_url(self) -> str:
-        # Retorna a string de conexao pronta para uso
         return f"postgresql+psycopg2://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}"
 
-# Cria uma instancia padrao para facilitar a importacao nos outros arquivos
+@dataclass(frozen=True)
+class PipelineConfig:
+    mode: str = os.getenv("PIPELINE_MODE", "full")  # full | sample
+    sample_rows: int = int(os.getenv("SAMPLE_ROWS", "10000"))
+    sample_files_per_type: int = int(os.getenv("SAMPLE_FILES_PER_TYPE", "1"))
+    sample_seed: int = int(os.getenv("SAMPLE_SEED", "42"))
+    sample_force: bool = os.getenv("SAMPLE_FORCE", "0") == "1"
+
 settings = DBConfig()
+pipeline_settings = PipelineConfig()
