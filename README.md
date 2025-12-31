@@ -2,9 +2,11 @@
 
 ## 📋 Visão geral do projeto
 
-Este projeto tem como objetivo construir um **pipeline de engenharia de dados** utilizando os **Dados Abertos de CNPJ da Receita Federal**, cobrindo desde a preparação do ambiente até a ingestão, modelagem e disponibilização dos dados para análise.
+Este projeto nasceu como uma resposta prática a um desafio real de engenharia de dados envolvendo os Dados Abertos de CNPJ da Receita Federal, que é uma base pública, massiva e pouco amigável para uso analítico.
 
-O projeto é estruturado por **fases**, cada uma documentada e versionada, para servir tanto como **material de aprendizado prático** quanto como **evidência de experiência aplicada em engenharia de dados**.
+Mais do que construir um pipeline funcional, o objetivo foi lidar com decisões reais de escopo, volume, integridade e trade-offs, comuns em ambientes de produção, mas raramente exploradas em projetos acadêmicos.
+
+O projeto é estruturado por fases, cada uma documentada e versionada, servindo como material de aprendizado prático e, principalmente, como evidência concreta da minha capacidade de atuar em engenharia de dados orientada a contexto e uso real.
 
 ---
 
