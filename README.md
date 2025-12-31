@@ -12,10 +12,11 @@ O projeto é estruturado por fases, cada uma documentada e versionada, servindo 
 
 ## 🎯 Objetivos do projeto
 
-- Trabalhar com **dados públicos reais e volumosos**.
-- Construir um pipeline **reprodutível e organizado**.
-- Aplicar boas práticas de engenharia de dados desde o setup.
-- Gerar material utilizável como **portfólio profissional**.
+- Trabalhar com **dados públicos reais, volumosos e não curados**, próximos da realidade de produção.
+- Construir um pipeline **reprodutível e sustentável**, considerando limitações reais de ambiente.
+- Aplicar boas práticas de engenharia de dados **desde o setup**, evitando refatorações tardias.
+- Gerar um projeto utilizável como **portfólio profissional**, evidenciando tomada de decisão técnica orientada a contexto.
+
 
 ---
 
