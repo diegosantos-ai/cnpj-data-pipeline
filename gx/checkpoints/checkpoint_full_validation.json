@@ -1,0 +1,20 @@
+{
+  "actions": [],
+  "id": "e84abd0c-e4f7-4445-b96b-65b55400d074",
+  "name": "checkpoint_full_validation",
+  "result_format": "SUMMARY",
+  "validation_definitions": [
+    {
+      "id": "b11d9eda-c49f-4c6a-8b91-bb4c33a58402",
+      "name": "validation_empresas"
+    },
+    {
+      "id": "f3671ea1-0d1a-403e-b0ff-ae031bab81cc",
+      "name": "validation_estabelecimentos"
+    },
+    {
+      "id": "8ab80d3e-9904-4296-9910-1f01694330cc",
+      "name": "validation_socios"
+    }
+  ]
+}

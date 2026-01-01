@@ -1,0 +1,37 @@
+{
+  "expectations": [
+    {
+      "id": "3252f7e3-26d1-4019-8a6d-4903d64c6348",
+      "kwargs": {
+        "min_value": 1
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_table_row_count_to_be_between"
+    },
+    {
+      "id": "d07c4c5f-3275-4261-b20e-1961afb23e45",
+      "kwargs": {
+        "column": "cnpj_basico"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_unique"
+    },
+    {
+      "id": "c6f8460d-7427-423b-9321-7ca5068e0b96",
+      "kwargs": {
+        "column": "cnpj_basico"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    }
+  ],
+  "id": "570d4a5f-0c4d-4a62-9bcf-0d42107c629b",
+  "meta": {
+    "great_expectations_version": "1.10.0"
+  },
+  "name": "suite_empresas",
+  "notes": null
+}

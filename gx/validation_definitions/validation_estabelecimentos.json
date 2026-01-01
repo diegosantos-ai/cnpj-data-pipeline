@@ -1,0 +1,22 @@
+{
+  "data": {
+    "asset": {
+      "id": "53c0878e-26d2-4cc6-9c20-c282242b9506",
+      "name": "table_estabelecimentos"
+    },
+    "batch_definition": {
+      "id": "d24d3483-f905-40a6-89d6-00c05fb32baa",
+      "name": "batch_estabelecimentos"
+    },
+    "datasource": {
+      "id": "6a4d67e8-8859-4448-9e91-1465d496f470",
+      "name": "cnpj_postgres"
+    }
+  },
+  "id": "f3671ea1-0d1a-403e-b0ff-ae031bab81cc",
+  "name": "validation_estabelecimentos",
+  "suite": {
+    "id": "0b29466a-c217-4d42-a314-84577e9e6035",
+    "name": "suite_estabelecimentos"
+  }
+}

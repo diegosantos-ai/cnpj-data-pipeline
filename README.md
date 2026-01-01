@@ -2,21 +2,18 @@
 
 ## 📋 Visão geral do projeto
 
-Este projeto nasceu como uma resposta prática a um desafio real de engenharia de dados envolvendo os Dados Abertos de CNPJ da Receita Federal, que é uma base pública, massiva e pouco amigável para uso analítico.
+Este projeto tem como objetivo construir um **pipeline de engenharia de dados** utilizando os **Dados Abertos de CNPJ da Receita Federal**, cobrindo desde a preparação do ambiente até a ingestão, modelagem e disponibilização dos dados para análise.
 
-Mais do que construir um pipeline funcional, o objetivo foi lidar com decisões reais de escopo, volume, integridade e trade-offs, comuns em ambientes de produção, mas raramente exploradas em projetos acadêmicos.
-
-O projeto é estruturado por fases, cada uma documentada e versionada, servindo como material de aprendizado prático e, principalmente, como evidência concreta da minha capacidade de atuar em engenharia de dados orientada a contexto e uso real.
+O projeto é estruturado por **fases**, cada uma documentada e versionada, para servir tanto como **material de aprendizado prático** quanto como **evidência de experienciada aplicada em engenharia de dados**.
 
 ---
 
 ## 🎯 Objetivos do projeto
 
-- Trabalhar com **dados públicos reais, volumosos e não curados**, próximos da realidade de produção.
-- Construir um pipeline **reprodutível e sustentável**, considerando limitações reais de ambiente.
-- Aplicar boas práticas de engenharia de dados **desde o setup**, evitando refatorações tardias.
-- Gerar um projeto utilizável como **portfólio profissional**, evidenciando tomada de decisão técnica orientada a contexto.
-
+- Trabalhar com **dados públicos reais e volumosos**.
+- Construir um pipeline **reprodutível e organizado**.
+- Aplicar boas práticas de engenharia de dados (Quality Gates, Analytics Schema).
+- Gerar material utilizável como **portfólio profissional**.
 
 ---
 
@@ -25,6 +22,7 @@ O projeto é estruturado por fases, cada uma documentada e versionada, servindo 
 - **Linguagem:** Python 3.13
 - **Banco de Dados:** PostgreSQL 16
 - **Infraestrutura:** Docker + Docker Compose
+- **Qualidade:** Great Expectations (GX)
 - **Bibliotecas:** SQLAlchemy, Pandas, python-dotenv, tqdm, requests
 - **Ferramentas:** Adminer, Git e GitHub
 
@@ -40,20 +38,21 @@ cnpj-data-pipeline/
 ├── .gitignore
 │
 ├── src/
-│   ├── __init__.py
-│   ├── config.py            # Configuração central (DB e Pipeline)
-│   ├── paths.py             # Centralização de caminhos (DATA_ROOT)
+│   ├── run_pipeline.py      # Orquestrador do pipeline (Runner)
 │   ├── bootstrap.py         # Validação de ambiente e diretórios
-│   ├── run_pipeline.py      # Orquestrador do pipeline
-│   ├── 00_test_connection.py # Teste de conexão
+│   ├── paths.py             # Centralização de caminhos (DATA_ROOT)
+│   ├── setup_gx.py          # Configuração do Great Expectations
 │   ├── 01_download.py        # Ingestão (Download)
-│   ├── 02_init_db.py         # Inicialização do schema
-│   ├── 03_extract_files.py   # Extração e Amostragem
-│   └── 04_load_data.py       # Carga no banco de dados
+│   ├── 02_init_db.py         # Inicialização do schema public
+│   ├── 03_extract_files.py   # Extração e Amostragem Inteligente
+│   ├── 04_load_data.py       # Carga no banco de dados
+│   ├── 06_init_analytics_schema.py # Criação do schema analytics
+│   ├── 07_promote_to_analytics.py  # Promoção Processed -> Analytics
+│   └── 08_quality_gate.py    # Gate de Qualidade bloqueante (GX)
 │
 ├── sql/
-│   └── create_tables.sql    # DDL das tabelas
-├── logs/                    # Logs de execução
+│   ├── create_tables.sql    # DDL das tabelas raw (public)
+│   └── analytics/           # Scripts de promoção e views
 └── docs/                    # Documentação e evidências
 ```
 
@@ -63,59 +62,52 @@ cnpj-data-pipeline/
 
 **Objetivo:** Preparar um ambiente local totalmente reprodutível, isolado via container e com ambiente Python controlado.
 
-**Destaques:**
-- PostgreSQL via Docker Compose.
-- Variáveis de ambiente centralizadas no `.env`.
-- Scripts de teste de conexão validados.
-
 ---
 
 ## 📥 Fase 1 — Ingestão de Dados (✅ Concluída)
 
-### 1. Status da Fase
-- **Status:** Concluída
-- **Validação:** QA aprovado (Sanity Checks 100% match em modo sample)
-- **HD Externo:** Configurado e validado para grandes volumes.
-
-### 2. Critério de Encerramento
-A Fase 1 foi encerrada após o atendimento dos seguintes critérios:
-- Pipeline de ingestão executável ponta a ponta.
-- Paths externos (`DATA_ROOT`) configurados e isolados.
-- Estrutura de `bootstrap` validada (Fail-fast para HD desconectado).
-- Runner funcional (`run_pipeline.py`) com suporte a flags.
-- **Suporte a modo `sample` inteligente** (preservando integridade referencial entre Empresas, Estabelecimentos e Sócios).
-
-### 3. Decisões Técnicas Documentadas
-
-#### 3.1 Padrão DATA_ROOT
-Adotado para centralizar a localização de dados brutos e processados fora do repositório Git, facilitando a portabilidade e mantendo o repositório leve.
-
-#### 3.2 Uso de HD Externo
-Decisão consciente de arquitetura para lidar com o volume massivo da base completa (Big Data), garantindo escalabilidade sem comprometer o armazenamento interno (SSD).
-
-#### 3.3 Modo Sample Inteligente
-Implementação de amostragem ancorada em **Empresas**. O pipeline extrai uma amostra de empresas e filtra automaticamente os estabelecimentos e sócios correspondentes, garantindo que o banco de dados de teste seja consistente (Join Rate de 100%).
-
-#### 3.4 Orquestrador (Runner)
-Criação do `src.run_pipeline` para centralizar a execução, suportando as flags:
-- `--mode [full|sample]`: Alterna entre carga completa e amostra.
-- `--sample-rows N`: Define o tamanho da amostra.
-- `--force`: Força a regeração de amostras.
-- `--dry-run`: Simula as etapas sem execução real.
-
-### 4. Evidências de Execução
-
-**Execução em modo Sample:**
-```powershell
-python -m src.run_pipeline --mode sample --sample-rows 50000 --force
-```
-- **Resultado:** ~500k registros carregados (50k por arquivo) com integridade referencial total.
-- **Sanity Check:** Match rate Estabelecimentos -> Empresas: **100.0%**.
+**Destaques:**
+- **Padrão DATA_ROOT:** Armazenamento em drive externo para Big Data.
+- **Modo Sample Inteligente:** Amostragem ancorada em Empresas com filtragem em cascata para Estabelecimentos e Sócios, garantindo **100% de integridade referencial** mesmo em amostras pequenas.
 
 ---
 
-## 🔜 Próxima fase: Fase 2 — Transformação e Normalização
-- Limpeza de dados.
-- Tipagem correta de colunas (Datas, Números).
-- Criação de Primary Keys e Índices para performance.
-- Normalização de tabelas auxiliares (CNAEs, Municípios, etc.).
+## 📊 Fase 2 — Arquitetura Analytics & Qualidade (✅ Concluída)
+
+### 1. Promoção Processed → Analytics
+Implementada a separação física entre dados de processamento (`public`) e dados para consumo analítico (`analytics`).
+- **Gate de Qualidade:** O script de promoção só é executado se os dados passarem nas validações de integridade.
+- **Views de Consumo:** Criação de views analíticas otimizadas para dashboards.
+
+### 2. Quality Gate com Great Expectations
+Integração do **Great Expectations (GX 1.0+)** para garantir que apenas dados íntegros cheguem ao usuário final.
+- **Validações:** Contagem de linhas, unicidade de CNPJ, obrigatoriedade de campos chave.
+- **Data Docs:** Documentação automatizada da qualidade dos dados gerada a cada execução.
+
+---
+
+## 🚀 Como Executar
+
+### 1. Iniciar Infraestrutura
+```powershell
+docker-compose up -d
+```
+
+### 2. Rodar Pipeline (Modo Sample)
+```powershell
+python -m src.run_pipeline --mode sample --sample-rows 50000 --force
+```
+
+### 3. Validar e Promover
+```powershell
+python -m src.06_init_analytics_schema
+python -m src.08_quality_gate
+python -m src.07_promote_to_analytics
+```
+
+---
+
+## 🔜 Próxima fase: Fase 3 — Transformação Pesada (Dask/DuckDB)
+- Processamento paralelo para carga Full.
+- Conversão para Parquet no HD externo.
+- Otimização de performance para milhões de registros.

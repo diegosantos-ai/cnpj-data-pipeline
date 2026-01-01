@@ -1,0 +1,22 @@
+{
+  "data": {
+    "asset": {
+      "id": "128c1057-c0c1-4323-8cf7-5711af5cf66c",
+      "name": "table_socios"
+    },
+    "batch_definition": {
+      "id": "2f702fbd-48ad-496c-a80f-17727d4a126d",
+      "name": "batch_socios"
+    },
+    "datasource": {
+      "id": "6a4d67e8-8859-4448-9e91-1465d496f470",
+      "name": "cnpj_postgres"
+    }
+  },
+  "id": "8ab80d3e-9904-4296-9910-1f01694330cc",
+  "name": "validation_socios",
+  "suite": {
+    "id": "39a3b8c3-22bd-446a-9840-3a888da290d6",
+    "name": "suite_socios"
+  }
+}

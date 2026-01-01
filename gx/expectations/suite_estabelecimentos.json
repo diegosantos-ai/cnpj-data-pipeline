@@ -1,0 +1,37 @@
+{
+  "expectations": [
+    {
+      "id": "4482a0b7-08d1-46a1-ab0a-37168e4aec45",
+      "kwargs": {
+        "min_value": 1
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_table_row_count_to_be_between"
+    },
+    {
+      "id": "e6343fd3-a874-45a8-a251-4910f88fe61d",
+      "kwargs": {
+        "column": "cnpj_basico"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "id": "9616840e-6207-4c1e-b338-07603df93e7a",
+      "kwargs": {
+        "column": "cnpj_ordem"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    }
+  ],
+  "id": "0b29466a-c217-4d42-a314-84577e9e6035",
+  "meta": {
+    "great_expectations_version": "1.10.0"
+  },
+  "name": "suite_estabelecimentos",
+  "notes": null
+}

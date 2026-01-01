@@ -1,0 +1,22 @@
+{
+  "data": {
+    "asset": {
+      "id": "772c9a8b-a865-4acc-88b1-f7edeb076e18",
+      "name": "table_empresas"
+    },
+    "batch_definition": {
+      "id": "84571b87-d934-4707-afef-405f3c36a8be",
+      "name": "batch_empresas"
+    },
+    "datasource": {
+      "id": "6a4d67e8-8859-4448-9e91-1465d496f470",
+      "name": "cnpj_postgres"
+    }
+  },
+  "id": "b11d9eda-c49f-4c6a-8b91-bb4c33a58402",
+  "name": "validation_empresas",
+  "suite": {
+    "id": "570d4a5f-0c4d-4a62-9bcf-0d42107c629b",
+    "name": "suite_empresas"
+  }
+}
