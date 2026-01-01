@@ -179,6 +179,43 @@ Este estado representa o **mínimo aceitável** para qualquer evolução futura.
 
 ---
 
+## 🚦 Fase 3 — Orquestração e Controle Operacional
+
+**Objetivo:**  
+Adicionar uma camada explícita de **orquestração, controle e observabilidade** sobre um pipeline já validado, sem reabrir fases anteriores ou refatorar o core técnico.
+
+Esta fase foca em **operar o pipeline como sistema**, não em expandir escopo técnico.
+
+### Escopo da Fase
+
+- Orquestração declarativa do pipeline como **flow + tasks**, com dependências explícitas.
+- Parametrização do fluxo para execução em diferentes modos (`SAMPLE` e `FULL`) sem duplicação de código.
+- Observabilidade básica por etapa:
+  - logs estruturados
+  - estados de execução (success/fail)
+  - tentativas e rastreabilidade
+- Tratamento do **Quality Gate como bloqueio real de execução**, integrando o Great Expectations ao fluxo.
+- Garantia de **idempotência e reexecução segura**, evitando efeitos colaterais em inicialização, promoção e outputs.
+- Evolução incremental utilizando **Prefect 2.x** como camada de orquestração, preservando os baselines das Fases 1 e 2.
+
+### Fora de Escopo
+
+- Escala distribuída (Spark/Dask)
+- Schedules automáticos
+- Execução contínua ou CI/CD
+- Refatoração estrutural do pipeline existente
+
+### Ferramentas Utilizadas
+
+- Python (ambiente virtual existente)
+- Prefect 2.x (orquestração)
+- Docker + PostgreSQL (infraestrutura)
+- Great Expectations (quality gate)
+- Runner atual como fallback operacional
+
+Esta fase consolida o projeto como um **pipeline governado e operável**, estabelecendo o mínimo aceitável para evolução futura com segurança.
+
+
 ## 📎 Observações Finais
 
 Este projeto serve como:
