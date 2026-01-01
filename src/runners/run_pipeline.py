@@ -14,10 +14,10 @@ logger = logging.getLogger("PipelineOrchestrator")
 
 # Lista de passos do pipeline (Módulos Python)
 PIPELINE_STEPS = [
-    "src.01_download",      # Baixa arquivos
-    "src.02_init_db",       # Cria/Reseta tabelas
-    "src.03_extract_files", # Extrai zips
-    "src.04_load_data"      # Carrega no Banco
+    "src.ingest.01_download",      # Baixa arquivos
+    "src.ingest.02_init_db",       # Cria/Reseta tabelas
+    "src.ingest.03_extract_files", # Extrai zips
+    "src.ingest.04_load_data"      # Carrega no Banco
 ]
 
 def run_step(module_name: str, dry_run: bool = False) -> None:

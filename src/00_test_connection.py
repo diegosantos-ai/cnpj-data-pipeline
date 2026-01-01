@@ -1,7 +1,7 @@
 ﻿
 import psycopg2
 from src.config import settings
-from src.bootstrap import bootstrap
+from src.runners.bootstrap import bootstrap
 
 def test_db() -> None:
     print(f"--- Testando conexao com {settings.host}:{settings.port} ---")

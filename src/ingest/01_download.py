@@ -5,7 +5,7 @@ import requests
 from pathlib import Path
 from tqdm import tqdm
 from src.paths import RAW_DIR
-from src.bootstrap import bootstrap
+from src.runners.bootstrap import bootstrap
 from src.config import pipeline_settings
 
 # Configuração de logging padronizada

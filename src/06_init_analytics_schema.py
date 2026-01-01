@@ -3,7 +3,7 @@ from pathlib import Path
 from sqlalchemy import create_engine, text
 from src.config import settings
 from src.paths import PROJECT_ROOT
-from src.bootstrap import bootstrap
+from src.runners.bootstrap import bootstrap
 
 # Configuração de logging padronizada
 logging.basicConfig(

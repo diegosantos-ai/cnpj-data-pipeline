@@ -4,7 +4,7 @@ from pathlib import Path
 from src.config import settings, pipeline_settings
 from sqlalchemy import create_engine
 from src.paths import PROCESSED_DIR, SAMPLE_DIR, ensure_dirs, validate_data_root
-from src.bootstrap import bootstrap
+from src.runners.bootstrap import bootstrap
 
 # Configuração de logging padronizada
 logging.basicConfig(

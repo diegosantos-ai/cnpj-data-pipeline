@@ -2,7 +2,7 @@ import logging
 from sqlalchemy import create_engine, text
 from src.config import settings
 from src.paths import PROJECT_ROOT
-from src.bootstrap import bootstrap
+from src.runners.bootstrap import bootstrap
 
 logging.basicConfig(
     level=logging.INFO,
