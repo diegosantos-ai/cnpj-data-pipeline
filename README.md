@@ -1,22 +1,24 @@
 # cnpj-data-pipeline
 
-Pipeline de engenharia de dados para os **Dados Abertos de CNPJ da Receita Federal**, desenvolvido dentro de um **Laboratório de Agentes**, com foco em **governança, qualidade, reprodutibilidade e evolução controlada**.
+Pipeline de engenharia de dados para os **Dados Abertos de CNPJ da Receita Federal**, com foco em **governança, qualidade, reprodutibilidade e evolução controlada**.
 
 O projeto demonstra a construção de um **sistema de dados batch governado**, partindo da ingestão até a camada analítica, com contratos explícitos, quality gate bloqueante e baseline operacional definida.
 
 ---
 
-## 🧠 Laboratório de Agentes
+## 🧠 Método de Construção do Projeto
 
-O projeto segue o modelo de **Laboratório de Agentes**, com responsabilidades bem definidas:
+Este projeto foi desenvolvido seguindo um modelo estruturado de execução inspirado em um **Laboratório de Agentes**, utilizado para garantir clareza de responsabilidade, qualidade e controle evolutivo.
 
-- **Orquestrador** — decide fluxo, escopo e progressão de fases  
+Papéis envolvidos no processo:
+
+- **Orquestrador** — define escopo, fluxo e progressão de fases  
 - **Execução Técnica** — implementa soluções técnicas  
 - **QA** — valida, bloqueia e classifica prontidão  
 - **Documentação** — fixa conhecimento validado  
 - **Automação** — escala apenas o que está maduro  
 
-Nenhum agente assume o papel do outro.
+Esse modelo orienta a execução, mas **o foco deste repositório é o sistema de dados CNPJ**.
 
 ---
 
